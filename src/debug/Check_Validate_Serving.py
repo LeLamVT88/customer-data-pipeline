@@ -13,11 +13,14 @@ print("count =", df.count())
 
 from pyspark.sql.functions import col, sum
 
+# check null
+
 df.select([
     sum(col(c).isNull().cast("int")).alias(c)
     for c in df.columns
 ]).show()
 
+# thống kê spend
 df.select("total_monthly_spend").describe().show()
 df.select("total_monthly_spend").orderBy("total_monthly_spend", ascending=False).show(10)
 spark.stop()

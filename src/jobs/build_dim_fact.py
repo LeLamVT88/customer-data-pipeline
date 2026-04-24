@@ -1,39 +1,67 @@
+from pyspark.sql.functions import monotonically_increasing_id
 from src.utils.spark_utils import create_spark
-from src.utils.config import CLEAN_PATH, DIM_PATH, FACT_PATH
+from src.utils.config import (
+    SILVER_CUSTOMER_PATH,
+    DIM_CUSTOMER_PATH,
+    FACT_CUSTOMER_ACTIVITY_PATH
+)
 
 
-def run(clean_input_path: str, dim_output_path: str, fact_output_path: str) -> None:
-    spark = create_spark("Build-Dim-Fact")
+def run(input_path=None, dim_output_path=None, fact_output_path=None):
+    spark = create_spark("Build Dim and Fact")
 
-    df = spark.read.parquet(clean_input_path)
+    input_path = input_path or SILVER_CUSTOMER_PATH
+    dim_output_path = dim_output_path or DIM_CUSTOMER_PATH
+    fact_output_path = fact_output_path or FACT_CUSTOMER_ACTIVITY_PATH
+
+    df = spark.read.parquet(str(input_path))
 
     dim_customer = df.select(
-        "customer_id",
-        "gender",
         "age",
+        "gender",
         "city_tier",
+        "shopping_preference"
+    ).dropDuplicates().withColumn(
+        "customer_key",
+        monotonically_increasing_id()
     )
 
-    fact_customer_activity = df.select(
-        "customer_id",
+    fact_customer_activity = df.join(
+        dim_customer,
+        on=["age", "gender", "city_tier", "shopping_preference"],
+        how="left"
+    ).select(
+        "customer_key",
+        "monthly_income",
+        "daily_internet_hours",
+        "smartphone_usage_years",
+        "social_media_hours",
+        "online_payment_trust_score",
+        "tech_savvy_score",
         "monthly_online_orders",
         "monthly_store_visits",
         "avg_online_spend",
         "avg_store_spend",
-        "total_monthly_spend"
+        "discount_sensitivity",
+        "return_frequency",
+        "avg_delivery_days",
+        "delivery_fee_sensitivity",
+        "free_return_importance",
+        "product_availability_online",
+        "impulse_buying_score",
+        "need_touch_feel_score",
+        "brand_loyalty_score",
+        "environmental_awareness",
+        "time_pressure_level"
     )
 
-    dim_customer.write.mode("overwrite").parquet(dim_output_path)
-    fact_customer_activity.write.mode("overwrite").parquet(fact_output_path)
+    dim_customer.write.mode("overwrite").parquet(str(dim_output_path))
+    fact_customer_activity.write.mode("overwrite").parquet(str(fact_output_path))
 
-    print(f"[OK] Dimension written to: {dim_output_path}")
-    print(f"[OK] Fact written to: {fact_output_path}")
+    print("Build dim and fact completed.")
+
     spark.stop()
 
 
 if __name__ == "__main__":
-    run(
-        clean_input_path=CLEAN_PATH,
-        dim_output_path=DIM_PATH,
-        fact_output_path=FACT_PATH,
-    )
+    run()

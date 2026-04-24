@@ -39,7 +39,7 @@ def main():
     df_final.write \
         .mode("overwrite") \
         .partitionBy("city_tier") \
-        .parquet("data/output/task3_customer_mart_partitioned")
+        .parquet("data/output/customer_mart_partitioned")
 
     spark.stop()
 

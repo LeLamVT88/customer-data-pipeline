@@ -35,7 +35,6 @@ def main():
         "customer_id",
         "gender",
         "city_tier",
-        "shopping_preference",
         "monthly_online_orders",
         "monthly_store_visits",
         "total_monthly_spend"
@@ -91,15 +90,6 @@ def main():
            .orderBy(col("total_spend").desc())
     q3.show(truncate=False)
 
-    q4 = df.groupBy("shopping_preference") \
-           .agg(
-               count("*").alias("num_customers"),
-               round(sum("total_monthly_spend"), 2).alias("total_spend"),
-               round(avg("total_monthly_spend"), 2).alias("avg_spend")
-           ) \
-           .orderBy(col("total_spend").desc())
-    q4.show(truncate=False)
-
     seg_df = df.withColumn(
         "customer_segment",
         when(col("total_monthly_spend") >= 1000, "High Value")
@@ -107,51 +97,19 @@ def main():
         .otherwise("Low Value")
     )
 
-    q5 = seg_df.groupBy("customer_segment") \
+    q4 = seg_df.groupBy("customer_segment") \
         .agg(
             count("*").alias("num_customers"),
             round(avg("total_monthly_spend"), 2).alias("avg_spend")
         ) \
         .orderBy(col("avg_spend").desc())
-    q5.show(truncate=False)
-
-    print("\n=== 8. EXPLAIN PLAN ===")
-    q4.explain(True)
+    q4.show(truncate=False)
 
     print("\n=== 9. BENCHMARK ===")
     benchmark_query("Q1 Top customers", q1)
     benchmark_query("Q2 Spend by gender", q2)
     benchmark_query("Q3 Spend by city tier", q3)
-    benchmark_query("Q4 Spend by shopping preference", q4)
-    benchmark_query("Q5 Customer segment", q5)
-
-    print("\n=== 10. CACHE TEST ===")
-    df.cache()
-
-    start1 = time.time()
-    df.count()
-    end1 = time.time()
-
-    start2 = time.time()
-    df.count()
-    end2 = time.time()
-
-    print("first count  =", round(end1 - start1, 4), "sec")
-    print("second count =", round(end2 - start2, 4), "sec")
-
-    print("\n=== 11. PROJECTION TEST ===")
-    start3 = time.time()
-    df.count()
-    end3 = time.time()
-
-    start4 = time.time()
-    df.select("customer_id", "total_monthly_spend").count()
-    end4 = time.time()
-
-    print("full df count time      =", round(end3 - start3, 4), "sec")
-    print("selected cols count time=", round(end4 - start4, 4), "sec")
-
-    spark.stop()
+    benchmark_query("Q4 Customer segment", q4)
 
 if __name__ == "__main__":
     main()
