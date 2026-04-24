@@ -1,32 +1,48 @@
-from pyspark.sql.functions import col, monotonically_increasing_id
+from pyspark.sql.functions import col, lower
 from src.utils.spark_utils import create_spark
-from src.utils.config import RAW_PATH, CLEAN_PATH
+from src.utils.config import (
+    BRONZE_CUSTOMER_PATH,
+    SILVER_CUSTOMER_PATH,
+    BAD_RECORDS_PATH
+)
 
 
-def run(raw_input_path: str, clean_output_path: str) -> None:
-    spark = create_spark("Clean-Data")
+def run(input_path=None, output_path=None, bad_path=None):
+    spark = create_spark("Clean Customer Data")
 
-    df = spark.read.parquet(raw_input_path)
+    input_path = input_path or BRONZE_CUSTOMER_PATH
+    output_path = output_path or SILVER_CUSTOMER_PATH
+    bad_path = bad_path or BAD_RECORDS_PATH
 
-    df_clean = (
-        df.dropDuplicates()
-          .dropna()
-          .withColumn("customer_id", monotonically_increasing_id())
-          .withColumn(
-              "total_monthly_spend",
-              col("monthly_online_orders") * col("avg_online_spend")
-              + col("monthly_store_visits") * col("avg_store_spend")
-          )
-    )
+    print(f"Reading bronze data from: {input_path}")
 
-    df_clean.write.mode("overwrite").parquet(clean_output_path)
+    df = spark.read.parquet(str(input_path))
 
-    print(f"[OK] Clean data written to: {clean_output_path}")
+    # ---- RULES ----
+    df_clean = df.withColumn("gender", lower(col("gender")))
+
+    df_valid = df_clean.filter(
+    (col("age") > 0) &
+    (col("monthly_income") >= 0) &
+    (col("monthly_online_orders") >= 0) &
+    (col("monthly_store_visits") >= 0) &
+    (col("avg_online_spend") >= 0) &
+    (col("avg_store_spend") >= 0)
+)
+
+    df_bad = df_clean.subtract(df_valid)
+
+    print(f"Valid rows: {df_valid.count()}")
+    print(f"Bad rows: {df_bad.count()}")
+
+    # ---- WRITE ----
+    df_valid.write.mode("overwrite").parquet(str(output_path))
+    df_bad.write.mode("overwrite").parquet(str(bad_path))
+
+    print("Clean data completed.")
+
     spark.stop()
 
 
 if __name__ == "__main__":
-    run(
-        raw_input_path=RAW_PATH,
-        clean_output_path=CLEAN_PATH,
-    )
+    run()
