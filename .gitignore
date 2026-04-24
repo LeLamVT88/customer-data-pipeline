@@ -1,11 +1,23 @@
-# macOS
-.DS_Store
-
 # Python
+venv/
 __pycache__/
 *.pyc
-.venv/
-venv/
+
+# IDE
+.vscode/
+.idea/
+
+# MacOS
+.DS_Store
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+
+# Spark
+.spark-warehouse/
+metastore_db/
+derby.log
 
 # Data output
 data/bronze/
@@ -13,17 +25,3 @@ data/silver/
 data/gold/
 data/serving/
 data/quarantine/
-
-# Spark
-.spark-warehouse/
-metastore_db/
-derby.log
-
-# Airflow
-airflow/logs/
-airflow/plugins/
-airflow/__pycache__/
-
-# IDE
-.vscode/
-.idea/

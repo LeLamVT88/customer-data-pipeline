@@ -15,7 +15,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    BASE_CMD = "cd /opt/airflow/project && pip install pyspark && PYTHONPATH=/opt/airflow/project python3 -m"
+    BASE_CMD = "cd /opt/airflow/project && echo JAVA_HOME=$JAVA_HOME && pip install pyspark && PYTHONPATH=/opt/airflow/project python3 -m"
 
     ingest = BashOperator(
         task_id="ingest_raw",
