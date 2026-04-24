@@ -51,10 +51,11 @@ Pipeline tuân theo **Data Engineering Lifecycle**:
 
 ## ⚙️ Công nghệ sử dụng
 
-* Python
-* PySpark
+* Python 3.8+
+* PySpark 3.5.0
+* Apache Airflow 2.6.3
 * Parquet (lưu trữ dữ liệu)
-* Airflow (orchestration)
+* Docker & Docker Compose
 * Git (quản lý version)
 
 ---
@@ -62,7 +63,7 @@ Pipeline tuân theo **Data Engineering Lifecycle**:
 ## 📂 Cấu trúc project
 
 ```
-customer-data-pipeline/
+Customer_Data_Pipeline/
 │
 ├── airflow/
 │   └── dags/
@@ -71,33 +72,118 @@ customer-data-pipeline/
 ├── data/
 │   ├── raw/                          # Dữ liệu thô (CSV)
 │   │   └── Consumer_Shopping_Trends_2026.csv
-│   ├── clean/                        # Dữ liệu đã làm sạch
-│   │   ├── base/                     # Dữ liệu base sau clean
-│   │   ├── customer_data/            # Dữ liệu khách hàng
-│   │   └── customers_clean/          # Dữ liệu khách hàng sạch
-│   ├── dim/                          # Dimension tables
-│   │   └── dim_customer/
-│   ├── fact/                         # Fact tables
-│   │   └── fact_customer_behavior/
-│   ├── output/                       # Output partitioned
-│   │   ├── customer_mart_partitioned/
-│   │   └── task3_customer_mart_partitioned/
+│   ├── bronze/                       # Bronze layer
+│   │   └── customer_raw/
+│   ├── silver/                       # Silver layer
+│   │   └── customer_clean/
+│   ├── gold/                         # Gold layer
+│   │   ├── dim_customer/
+│   │   └── fact_customer_activity/
+│   ├── quarantine/                   # Dữ liệu lỗi
+│   │   └── bad_customer_records/
 │   └── serving/                      # Serving layer
-│       ├── customer_mart/
-│       ├── dim_customer/
-│       ├── fact_customer_activity/
-│       └── spend_by_segment/
+│       └── customer_mart/
 │
 ├── src/
-│   ├── Pipeline.py                   # Module chính với functions
 │   ├── jobs/                         # Các job riêng biệt
 │   │   ├── ingest_raw.py
 │   │   ├── clean_data.py
 │   │   ├── build_dim_fact.py
 │   │   ├── build_serving.py
 │   │   └── validate_serving.py
-│   ├── utils/                        # Utilities
-│   │   ├── config.py
+│   ├── scripts/                      # Scripts validation
+│   │   ├── Check_Partition.py
+│   │   ├── Check_Validate_Serving.py
+│   │   └── Test_serving.py
+│   └── utils/                        # Utilities
+│       ├── config.py
+│       └── spark_utils.py
+│
+├── Dockerfile                        # Docker image cho Airflow + PySpark
+├── docker-compose.yml                # Orchestration với Docker Compose
+├── requirements.txt                  # Python dependencies
+├── LICENSE                           # License
+├── README.md                         # Documentation này
+└── .gitignore                        # Git ignore rules
+```
+
+---
+
+## 🚀 Cài đặt và Chạy
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Git
+
+### Setup
+
+1. Clone repository:
+   ```bash
+   git clone https://github.com/your-username/Customer_Data_Pipeline.git
+   cd Customer_Data_Pipeline
+   ```
+
+2. Build và chạy services:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. Truy cập Airflow UI:
+   - URL: http://localhost:8081
+   - Username: admin
+   - Password: admin
+
+### Chạy Pipeline
+
+1. Trong Airflow UI, tìm DAG `customer_data_pipeline`
+2. Click "Trigger DAG" để chạy pipeline
+3. Hoặc dùng CLI:
+   ```bash
+   docker exec airflow airflow dags trigger customer_data_pipeline
+   ```
+
+### Validation
+
+Chạy scripts validation:
+```bash
+docker exec airflow bash -c "cd /opt/airflow/project && python3 src/scripts/Test_serving.py"
+```
+
+---
+
+## 📊 Dữ liệu
+
+- **Source**: Consumer Shopping Trends 2026 (CSV)
+- **Output**: Customer mart với các metrics như monthly spend, orders, visits
+- **Format**: Parquet cho hiệu suất cao
+
+---
+
+## 🤝 Đóng góp
+
+1. Fork project
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Mở Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 📞 Liên hệ
+
+- Project Link: [https://github.com/your-username/Customer_Data_Pipeline](https://github.com/your-username/Customer_Data_Pipeline)
+- Email: your-email@example.com
+
+---
+
+*Project này được tạo để học tập và demo Data Engineering pipeline.*
 │   │   └── spark_utils.py
 │   └── debug/                        # Debug scripts
 │       ├── Check_Partition.py
