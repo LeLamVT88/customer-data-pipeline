@@ -1,37 +1,40 @@
+from pyspark.sql.functions import col, count, sum as spark_sum
 from src.utils.spark_utils import create_spark
-from src.utils.config import SERVING_PATH
+from src.utils.config import CUSTOMER_MART_PATH
 
 
-def run(serving_input_path: str) -> None:
-    spark = create_spark("Validate-Serving")
+def run(serving_input_path=None):
+    spark = create_spark("Validate Customer Mart")
 
-    df = spark.read.parquet(serving_input_path)
+    serving_input_path = serving_input_path or CUSTOMER_MART_PATH
 
-    print("\n=== SCHEMA ===")
+    df = spark.read.parquet(str(serving_input_path))
+
+    print("=== SCHEMA ===")
     df.printSchema()
 
-    print("\n=== SAMPLE DATA ===")
-    df.show(5, truncate=False)
+    print("=== SAMPLE DATA ===")
+    df.show(10, truncate=False)
 
-    print("\n=== ROW COUNT ===")
+    print("=== ROW COUNT ===")
     print(df.count())
 
-    print("\n=== NULL CHECK ===")
-    df.selectExpr([
-        f"sum(case when {c} is null then 1 else 0 end) as {c}"
+    print("=== NULL CHECK ===")
+    df.select([
+        spark_sum(col(c).isNull().cast("int")).alias(c)
         for c in df.columns
     ]).show(truncate=False)
 
-    print("\n=== DESCRIBE total_monthly_spend ===")
-    if "total_monthly_spend" in df.columns:
-        df.select("total_monthly_spend").describe().show()
-    else:
-        print("Column total_monthly_spend not found.")
+    print("=== DUPLICATE CUSTOMER KEY CHECK ===")
+    df.groupBy("customer_key") \
+        .agg(count("*").alias("count")) \
+        .filter(col("count") > 1) \
+        .show(truncate=False)
+
+    print("Validate serving layer completed.")
 
     spark.stop()
 
 
 if __name__ == "__main__":
-    run(
-        serving_input_path=SERVING_PATH,
-    )
+    run()
