@@ -52,6 +52,17 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "local"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+    ports:
+      - "8085:8080"
+    depends_on:
+      - kafka
+
   airflow-init:
     image: apache/airflow:3.0.0
     container_name: airflow-init
