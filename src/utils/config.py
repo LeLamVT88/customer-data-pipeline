@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # Data lake layers
 DATA_DIR = PROJECT_ROOT / "data"
 
-RAW_PATH = DATA_DIR / "raw" / "customer_shopping_trends.csv"
+RAW_PATH = DATA_DIR / "raw" / "Consumer_Shopping_Trends_2026.csv"
 
 BRONZE_DIR = DATA_DIR / "bronze"
 SILVER_DIR = DATA_DIR / "silver"

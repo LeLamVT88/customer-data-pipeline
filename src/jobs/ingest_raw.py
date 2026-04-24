@@ -1,24 +1,28 @@
 from src.utils.spark_utils import create_spark
-from src.utils.config import SOURCE_CSV_PATH, RAW_PATH
+from src.utils.config import RAW_PATH, BRONZE_CUSTOMER_PATH
 
-def run(source_csv_path: str, raw_output_path: str) -> None:
-    spark = create_spark("Ingest-Raw")
 
-    df = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(source_csv_path)
+def run(raw_input_path=None, bronze_output_path=None):
+    spark = create_spark("Ingest Raw Customer Data")
+
+    raw_input_path = raw_input_path or RAW_PATH
+    bronze_output_path = bronze_output_path or BRONZE_CUSTOMER_PATH
+
+    print(f"Reading raw data from: {raw_input_path}")
+    print(f"Writing bronze data to: {bronze_output_path}")
+
+    df = spark.read.csv(
+        str(raw_input_path),
+        header=True,
+        inferSchema=True
     )
 
-    df.write.mode("overwrite").parquet(raw_output_path)
+    df.write.mode("overwrite").parquet(str(bronze_output_path))
 
-    print(f"[OK] Raw data written to: {raw_output_path}")
+    print("Ingest raw completed successfully.")
+
     spark.stop()
 
 
 if __name__ == "__main__":
-    run(
-        source_csv_path=SOURCE_CSV_PATH,
-        raw_output_path=RAW_PATH,
-    )
+    run()

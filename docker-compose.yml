@@ -1,0 +1,27 @@
+services:
+  airflow:
+    build: .
+    container_name: airflow
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - .:/opt/airflow/project
+
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create
+        --username admin
+        --password admin
+        --firstname admin
+        --lastname admin
+        --role Admin
+        --email admin@example.com || true &&
+      airflow webserver --port 8080 &
+      airflow scheduler
+      "
