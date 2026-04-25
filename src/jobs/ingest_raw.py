@@ -1,3 +1,4 @@
+from pyspark.sql.functions import trim
 from src.utils.spark_utils import create_spark
 from src.utils.config import RAW_PATH, BRONZE_CUSTOMER_PATH
 
@@ -16,6 +17,10 @@ def run(raw_input_path=None, bronze_output_path=None):
         header=True,
         inferSchema=True
     )
+
+    # Trim column names to remove leading/trailing spaces
+    for col_name in df.columns:
+        df = df.withColumnRenamed(col_name, col_name.strip())
 
     df.write.mode("overwrite").parquet(str(bronze_output_path))
 
